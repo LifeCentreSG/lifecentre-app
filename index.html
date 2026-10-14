@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Life Centre</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="Life Centre Church app: book a room, see your bookings, news and sermons.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Life Centre">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root { --ink: #151A2D; --muted: #535A6E; --accent: #2F4BD8; --ground: #F5F6FA; }
+  html, body { margin: 0; height: 100%; background: var(--ground); }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--ink);
+    padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box; overflow: hidden;
+  }
+  #app { display: block; border: 0; width: 100%; height: 100%; background: var(--ground); }
+  #loading {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    background: var(--ground); transition: opacity 0.3s; z-index: 1;
+  }
+  #loading img { width: 72px; height: 72px; border-radius: 18px; }
+  #loading p { margin: 0; font-weight: 600; color: var(--muted); }
+  #loading a { color: var(--accent); font-weight: 700; }
+  #loading.done { opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #loading { transition: none; } }
+
+  #install {
+    position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 2;
+    background: var(--ink); color: #FFFFFF; border-radius: 18px; padding: 14px 14px 14px 16px;
+    display: none; align-items: center; gap: 12px; box-shadow: 0 8px 30px rgba(21, 26, 45, 0.25);
+    max-width: 560px; margin: 0 auto;
+  }
+  #install.show { display: flex; }
+  #install img { width: 44px; height: 44px; border-radius: 11px; flex: none; }
+  #install .txt { flex: 1; min-width: 0; font-size: 14px; line-height: 1.35; }
+  #install .txt strong { display: block; font-size: 15px; }
+  #install button {
+    flex: none; min-height: 40px; border-radius: 12px; border: none; font: inherit; font-weight: 700; cursor: pointer; padding: 0 14px;
+  }
+  #installBtn { background: #FFFFFF; color: var(--ink); }
+  #closeBtn { background: transparent; color: #C9CDDB; padding: 0 8px !important; font-size: 20px !important; }
+  .share-glyph { display: inline-block; vertical-align: -3px; }
+</style>
+</head>
+<body>
+  <div id="loading" role="status">
+    <img src="icon-192.png" alt="">
+    <p id="loadingText">Opening Life Centre…</p>
+  </div>
+
+  <iframe id="app" title="Life Centre" allow="clipboard-write"></iframe>
+
+  <div id="install" role="dialog" aria-label="Add Life Centre to your home screen">
+    <img src="icon-192.png" alt="">
+    <div class="txt" id="installText"></div>
+    <button id="installBtn" type="button" hidden>Install</button>
+    <button id="closeBtn" type="button" aria-label="Not now">×</button>
+  </div>
+
+<script>
+  // The hub itself is hosted by Google Apps Script. This page shows it at
+  // app.lifecentre.sg and lets phones install it with the church icon.
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbyznWyBq_bF-JCMe4S-sR61wQL8FNXxZ0s6mKlFyNvks_Lm_uF2o-0NVaGCN2SruFHB/exec';
+
+  // Pass ?page= and ?ref= through so links in emails still open the right screen.
+  var params = new URLSearchParams(location.search);
+  var pass = new URLSearchParams();
+  ['page', 'ref'].forEach(function (k) { if (params.get(k)) pass.set(k, params.get(k)); });
+  var src = APP_URL + (pass.toString() ? '?' + pass.toString() : '');
+
+  var frame = document.getElementById('app');
+  var loading = document.getElementById('loading');
+  frame.addEventListener('load', function () { loading.classList.add('done'); });
+  frame.src = src;
+  setTimeout(function () {
+    if (loading.classList.contains('done')) return;
+    document.getElementById('loadingText').innerHTML =
+      'Taking longer than usual. <a href="' + src + '" target="_top" rel="noopener">Open it directly</a>';
+  }, 20000);
+
+  // ---------- install prompt ----------
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isIOSSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA/.test(ua);
+  var box = document.getElementById('install');
+  var text = document.getElementById('installText');
+  var installBtn = document.getElementById('installBtn');
+
+  function dismissed() {
+    try { return Number(localStorage.getItem('lcInstallDismissed') || 0) > Date.now(); } catch (e) { return false; }
+  }
+  function dismiss(days) {
+    box.classList.remove('show');
+    try { localStorage.setItem('lcInstallDismissed', String(Date.now() + days * 86400000)); } catch (e) {}
+  }
+  document.getElementById('closeBtn').addEventListener('click', function () { dismiss(14); });
+
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferred = e;
+    if (standalone || dismissed()) return;
+    text.innerHTML = '<strong>Get the Life Centre app</strong>Add it to your home screen in one tap.';
+    installBtn.hidden = false;
+    box.classList.add('show');
+  });
+  installBtn.addEventListener('click', function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; box.classList.remove('show'); });
+  });
+  window.addEventListener('appinstalled', function () { box.classList.remove('show'); });
+
+  if (!standalone && !dismissed() && isIOS) {
+    setTimeout(function () {
+      var share = '<svg class="share-glyph" width="16" height="18" viewBox="0 0 16 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Share"><path d="M8 13V1M4 5l4-4 4 4"/><path d="M3 8H2v11h12V8h-1"/></svg>';
+      text.innerHTML = isIOSSafari
+        ? '<strong>Add Life Centre to your home screen</strong>Tap ' + share + ' Share below, then <b>Add to Home Screen</b>.'
+        : '<strong>Add Life Centre to your home screen</strong>Open app.lifecentre.sg in <b>Safari</b>, tap Share, then <b>Add to Home Screen</b>.';
+      box.classList.add('show');
+    }, 2500);
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
+</body>
+</html>
