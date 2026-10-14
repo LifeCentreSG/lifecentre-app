@@ -1,10 +1,16 @@
 // Keeps the app shell (this page and its icons) available so the home-screen
 // app opens quickly. The hub itself always loads fresh from Google.
-const CACHE = 'lc-shell-v1';
+const CACHE = 'lc-shell-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'favicon-32.png'];
 
+// Cache each file on its own, straight from the network, so one failure (or an
+// old cached redirect in the browser) cannot stop the helper from installing.
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {}))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {

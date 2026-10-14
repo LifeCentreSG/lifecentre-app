@@ -90,9 +90,13 @@
   var ua = navigator.userAgent;
   var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var isIOSSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA/.test(ua);
+  var isAndroid = /Android/i.test(ua);
+  var isSamsung = /SamsungBrowser/i.test(ua);
+  var isFirefox = /Firefox/i.test(ua);
   var box = document.getElementById('install');
   var text = document.getElementById('installText');
   var installBtn = document.getElementById('installBtn');
+  var promptFired = false;
 
   function dismissed() {
     try { return Number(localStorage.getItem('lcInstallDismissed') || 0) > Date.now(); } catch (e) { return false; }
@@ -107,6 +111,7 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferred = e;
+    promptFired = true;
     if (standalone || dismissed()) return;
     text.innerHTML = '<strong>Get the Life Centre app</strong>Add it to your home screen in one tap.';
     installBtn.hidden = false;
@@ -119,6 +124,7 @@
   });
   window.addEventListener('appinstalled', function () { box.classList.remove('show'); });
 
+  // iPhone: Apple has no one-tap install, so show where to tap.
   if (!standalone && !dismissed() && isIOS) {
     setTimeout(function () {
       var share = '<svg class="share-glyph" width="16" height="18" viewBox="0 0 16 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Share"><path d="M8 13V1M4 5l4-4 4 4"/><path d="M3 8H2v11h12V8h-1"/></svg>';
@@ -127,6 +133,41 @@
         : '<strong>Add Life Centre to your home screen</strong>Open app.lifecentre.sg in <b>Safari</b>, tap Share, then <b>Add to Home Screen</b>.';
       box.classList.add('show');
     }, 2500);
+  }
+
+  // Android: some browsers (Samsung Internet, for one) never offer the one-tap
+  // prompt. If it has not appeared after a few seconds, show the manual steps.
+  if (!standalone && !dismissed() && isAndroid) {
+    setTimeout(function () {
+      if (promptFired || box.classList.contains('show')) return;
+      var steps = isSamsung
+        ? 'Tap the <b>menu</b> (three lines or dots), then <b>Add page to</b>, then <b>Home screen</b>.'
+        : isFirefox
+          ? 'Tap <b>&#8942;</b>, then <b>Install</b> (or <b>Add to Home screen</b>).'
+          : 'Tap <b>&#8942;</b>, then <b>Install app</b> (or <b>Add to Home screen</b>).';
+      text.innerHTML = '<strong>Add Life Centre to your home screen</strong>' + steps;
+      installBtn.hidden = true;
+      box.classList.add('show');
+    }, 5000);
+  }
+
+  // Hidden status panel: open app.lifecentre.sg/?debug=1 to see what this phone reports.
+  if (params.get('debug')) {
+    var dbg = document.createElement('div');
+    dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:5;background:rgba(0,0,0,0.85);color:#fff;font:11px/1.4 monospace;padding:6px 8px;white-space:pre-wrap;';
+    document.body.appendChild(dbg);
+    var tick = function () {
+      var p = 'serviceWorker' in navigator ? navigator.serviceWorker.getRegistration() : Promise.resolve(null);
+      p.then(function (reg) {
+        var sw = reg ? (reg.active ? 'active' : reg.installing ? 'installing' : reg.waiting ? 'waiting' : 'none') : 'none';
+        dbg.textContent = 'secure=' + window.isSecureContext + '  standalone=' + standalone +
+          '\nandroid=' + isAndroid + '  ios=' + isIOS + '  samsung=' + isSamsung +
+          '\npromptFired=' + promptFired + '  sw=' + sw + '  dismissed=' + dismissed() +
+          '\n' + ua.slice(0, 120);
+      });
+    };
+    tick();
+    setInterval(tick, 2000);
   }
 
   if ('serviceWorker' in navigator) {
