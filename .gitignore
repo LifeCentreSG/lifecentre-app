@@ -33,3 +33,4 @@ android/*.idsig
 cloudflare/**/.wrangler/
 cloudflare/**/.dev.vars
 cloudflare/**/node_modules/
+_site/

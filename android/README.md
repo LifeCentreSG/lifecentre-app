@@ -1,7 +1,7 @@
 # Life Centre Android app
 
 The Android app is the web app in a thin Android shell (a Trusted Web Activity). It opens
-https://icathia.com/lifecentre-app-prototype/app/ full screen, with no browser bar. Everything is prepared here;
+https://app.lifecentre.sg/ full screen, with no browser bar. Everything is prepared here;
 **nothing has been built or signed yet.** Package name: `sg.lifecentre.app`.
 
 Run every command below in PowerShell, in this `android` folder:
@@ -14,7 +14,7 @@ cd "C:\Users\Theersha Prawath\Documents\lifecentre-app-prototype\android"
 
 1. The new app files (manifest, icons, service worker) must be live. Check this returns `200`:
    ```powershell
-   curl.exe -s -o NUL -w "%{http_code}" https://icathia.com/lifecentre-app-prototype/app/manifest.webmanifest
+   curl.exe -s -o NUL -w "%{http_code}" https://app.lifecentre.sg/manifest.webmanifest
    ```
 2. The app icon is the church logo in `app\icons\icon-bethlehem-prism-white.png`. To change it, replace that file, run
    `node scripts/make-icons.mjs` from the main folder, then commit and publish the new icons.
@@ -70,15 +70,15 @@ npx bubblewrap fingerprint generateAssetLinks
 ```
 
 That writes `assetlinks.json` here (the layout is in `assetlinks.template.json`). It must be served at exactly
-**https://icathia.com/.well-known/assetlinks.json**, at the root of the domain. This repository only serves the
-`/lifecentre-app-prototype/` folder, so the file goes into the repository that serves the root of `icathia.com`:
+**https://app.lifecentre.sg/.well-known/assetlinks.json**, at the root of the app's address. The app is published at the
+root of app.lifecentre.sg, so this repository serves it: commit the file as `well-known/assetlinks.json` (the publish step
+copies that folder to `/.well-known/`; it is a public file, so it is fine in git).
 
-1. Add the file at `.well-known/assetlinks.json`.
-2. Also add an empty file named `.nojekyll` at the root. Without it GitHub Pages hides folders that start with a dot.
-3. Publish, then check it. This must show the package `sg.lifecentre.app` and a fingerprint:
+1. Copy `assetlinks.json` to `well-known/assetlinks.json` in the main folder, then commit and push to main.
+2. Check it, once the publish has run. This must show the package `sg.lifecentre.app` and a fingerprint:
    ```powershell
-   curl.exe -s https://icathia.com/.well-known/assetlinks.json
-   curl.exe -s "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://icathia.com&relation=delegate_permission/common.handle_all_urls"
+   curl.exe -s https://app.lifecentre.sg/.well-known/assetlinks.json
+   curl.exe -s "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://app.lifecentre.sg&relation=delegate_permission/common.handle_all_urls"
    ```
 
 Until this is live, the app still opens but shows a browser bar at the top.

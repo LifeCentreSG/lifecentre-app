@@ -6,7 +6,7 @@ import { firstName } from './greeting.js';
 
 export const PROFILE_KEY = 'profile';
 export const LIMITS = { name: 60, bio: 150 };
-export const APP_URL = 'https://icathia.com/lifecentre-app-prototype/app/'; // the address an invitation links to
+export const APP_URL = 'https://app.lifecentre.sg/'; // the address an invitation links to
 export const PHOTO_SIZE = 320; // the profile photo is saved as a square this many pixels wide, shown in a circle
 export const BANNER_SIZE = { width: 1200, height: 400 }; // the banner is saved this wide (3:1)
 
