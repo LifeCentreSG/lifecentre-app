@@ -4175,7 +4175,7 @@ describe('Profile', () => {
     const message = "Grace invited you to the Life Centre app. Join us: https://app.lifecentre.sg/";
     const noSheet = (p) => p.evaluateOnNewDocument(() => { Object.defineProperty(Navigator.prototype, 'share', { value: undefined, configurable: true }); });
     const { page, errors, context } = await open('#/profile', { setup: async (p) => { await noSheet(p); await presetLocal({ profile: { name: 'Grace Lim', bio: 'Psalm 23', birthday: { day: 3, month: 4 } } })(p); } });
-    await page.click('.pf-share');
+    await page.waitForSelector('.pf-share'); await page.$eval('.pf-share', (b) => b.click()); // one step: the screen redraws once, so a separate find-then-click can hit a detached button
     await page.waitForSelector('.share-sheet');
     const sheet = await page.$eval('.share-sheet', (s) => ({ msg: s.querySelector('.sh-msg').textContent, items: [...s.querySelectorAll('.sh-item')].map((i) => [i.textContent, i.getAttribute('href')]) }));
     assert.equal(sheet.msg, message);
@@ -4197,7 +4197,7 @@ describe('Profile', () => {
     await context.close();
     // with the phone's own share sheet, and no name set
     const withSheet = await open('#/profile', { setup: (p) => p.evaluateOnNewDocument(() => { window.__shared = []; Object.defineProperty(Navigator.prototype, 'share', { value: async (d) => { window.__shared.push(d); }, configurable: true }); }) });
-    await withSheet.page.click('.pf-share');
+    await withSheet.page.waitForSelector('.pf-share'); await withSheet.page.$eval('.pf-share', (b) => b.click());
     await withSheet.page.waitForFunction(() => window.__shared.length === 1);
     assert.deepEqual(await withSheet.page.evaluate(() => window.__shared), [{ text: "You're invited to the Life Centre app. Join us: https://app.lifecentre.sg/" }]);
     assert.equal(await withSheet.page.$('.share-sheet'), null);
