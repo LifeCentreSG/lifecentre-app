@@ -140,5 +140,5 @@ describe('the invitation', () => {
     assert.match(t.email, /^mailto:\?subject=Join%20me%20on%20the%20Life%20Centre%20app&body=/);
     assert.ok(decodeURIComponent(t.email.split('body=')[1]) === msg);
   });
-  it('is the live app address', () => assert.equal(APP_URL, 'https://icathia.com/lifecentre-app-prototype/app/'));
+  it('is the live app address', () => assert.equal(APP_URL, 'https://app.lifecentre.sg/'));
 });

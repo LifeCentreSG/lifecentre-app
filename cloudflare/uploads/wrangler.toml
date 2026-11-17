@@ -18,4 +18,4 @@ bucket_name = "lifecentre-uploads"
 FIREBASE_PROJECT_ID = "lifecentre-app"
 BUCKET_NAME = "lifecentre-uploads"
 PUBLIC_BASE_URL = "https://pub-6e5175904733427ab0e9528a3c78c10e.r2.dev" # the bucket's public address (an r2.dev address, or a custom domain)
-ALLOWED_ORIGINS = "https://icathia.com,http://localhost:5173,http://localhost:8000" # the live app, and the app served locally (npm run serve)
+ALLOWED_ORIGINS = "https://icathia.com,https://app.lifecentre.sg,https://lifecentresg.github.io,http://localhost:5173,http://localhost:8000" # the live app (old address kept until the move to app.lifecentre.sg is finished, then remove icathia.com), the test address, and the app served locally (npm run serve)

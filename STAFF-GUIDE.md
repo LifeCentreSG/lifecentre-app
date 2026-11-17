@@ -30,7 +30,7 @@ If it says **"Not on the staff list"**, ask an admin to add the email address yo
 To leave, or to switch to another account, tap **Sign out** on Account.
 
 To book a room you also sign in as a member (an emailed 6-digit code). Do that from **Sign in for bookings** on Account, or from Facilities booking.
-The staff page is still at **https://icathia.com/lifecentre-app-prototype/app/#/staff**.
+The staff page is still at **https://app.lifecentre.sg/#/staff**.
 
 ## Post a notice
 

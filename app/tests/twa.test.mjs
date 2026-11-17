@@ -8,13 +8,13 @@ const root = new URL('../../', import.meta.url);
 const json = (path) => JSON.parse(readFileSync(new URL(path, root), 'utf8'));
 const twa = json('android/twa-manifest.json');
 const web = json('app/manifest.webmanifest');
-const LIVE = 'https://icathia.com/lifecentre-app-prototype/app/';
+const LIVE = 'https://app.lifecentre.sg/';
 
 describe('Android app settings', () => {
   it('open the live web app from its own folder, with the package name the church chose', () => {
     assert.equal(twa.packageId, 'sg.lifecentre.app');
-    assert.equal(twa.host, 'icathia.com');
-    assert.equal(twa.startUrl, '/lifecentre-app-prototype/app/');
+    assert.equal(twa.host, 'app.lifecentre.sg');
+    assert.equal(twa.startUrl, '/');
     assert.equal(twa.fullScopeUrl, LIVE);
     assert.equal(twa.webManifestUrl, `${LIVE}manifest.webmanifest`);
   });

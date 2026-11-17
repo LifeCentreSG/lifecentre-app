@@ -1,6 +1,7 @@
 // The upload Worker, run in Node with the fetches and the bucket faked: tokens, permissions, limits, what lands in the bucket, CORS.
 import { describe, it, before, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import worker, { handle, verifyFirebaseToken, resetKeyCache, b64url, MAX_BYTES, TOO_BIG } from '../uploads/src/index.js';
 
 const PROJECT = 'lifecentre-app';
@@ -155,5 +156,19 @@ describe('POST /upload', () => {
     assert.equal(await (await handle(new Request('https://w.test/'), envWith(fakeBucket()), fakeIo())).text(), 'ok');
     assert.equal(typeof worker.fetch, 'function');
     assert.equal(worker.scheduled, undefined, 'the clean-up lives in the Apps Script job now');
+  });
+  it('allows the addresses in wrangler.toml: the new app address and the test address as well as the old one, and nothing that only looks like them', async () => {
+    const toml = readFileSync(new URL('../uploads/wrangler.toml', import.meta.url), 'utf8');
+    const origins = toml.match(/^ALLOWED_ORIGINS = "([^"]+)"/m)[1].split(',');
+    for (const o of ['https://app.lifecentre.sg', 'https://lifecentresg.github.io', 'https://icathia.com', 'http://localhost:5173']) assert.ok(origins.includes(o), o + ' is allowed');
+    const env = { ...baseEnv, ALLOWED_ORIGINS: origins.join(',') };
+    for (const o of origins) {
+      const pre = await handle(new Request('https://w.test/upload', { method: 'OPTIONS', headers: { Origin: o } }), ({ ...env, UPLOADS: fakeBucket() }), fakeIo());
+      assert.equal(pre.headers.get('Access-Control-Allow-Origin'), o);
+    }
+    for (const o of ['http://app.lifecentre.sg', 'https://app.lifecentre.sg.evil.example', 'https://evil-app.lifecentre.sg', 'https://lifecentresg.github.io.evil.example', 'https://other.github.io']) {
+      const pre = await handle(new Request('https://w.test/upload', { method: 'OPTIONS', headers: { Origin: o } }), ({ ...env, UPLOADS: fakeBucket() }), fakeIo());
+      assert.equal(pre.headers.get('Access-Control-Allow-Origin'), null, o + ' is not allowed');
+    }
   });
 });

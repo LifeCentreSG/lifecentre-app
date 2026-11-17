@@ -4172,17 +4172,17 @@ describe('Profile', () => {
   });
 
   it('Share my profile: the phone\'s share sheet with the invitation, or the list of Copy link, WhatsApp, Telegram and Email', async () => {
-    const message = "Grace invited you to the Life Centre app. Join us: https://icathia.com/lifecentre-app-prototype/app/";
+    const message = "Grace invited you to the Life Centre app. Join us: https://app.lifecentre.sg/";
     const noSheet = (p) => p.evaluateOnNewDocument(() => { Object.defineProperty(Navigator.prototype, 'share', { value: undefined, configurable: true }); });
     const { page, errors, context } = await open('#/profile', { setup: async (p) => { await noSheet(p); await presetLocal({ profile: { name: 'Grace Lim', bio: 'Psalm 23', birthday: { day: 3, month: 4 } } })(p); } });
-    await page.click('.pf-share');
+    await page.waitForSelector('.pf-share'); await page.$eval('.pf-share', (b) => b.click()); // one step: the screen redraws once, so a separate find-then-click can hit a detached button
     await page.waitForSelector('.share-sheet');
     const sheet = await page.$eval('.share-sheet', (s) => ({ msg: s.querySelector('.sh-msg').textContent, items: [...s.querySelectorAll('.sh-item')].map((i) => [i.textContent, i.getAttribute('href')]) }));
     assert.equal(sheet.msg, message);
     assert.deepEqual(sheet.items, [
       ['Copy link', null],
       ['WhatsApp', `https://wa.me/?text=${encodeURIComponent(message)}`],
-      ['Telegram', `https://t.me/share/url?url=${encodeURIComponent('https://icathia.com/lifecentre-app-prototype/app/')}&text=${encodeURIComponent('Grace invited you to the Life Centre app. Join us:')}`],
+      ['Telegram', `https://t.me/share/url?url=${encodeURIComponent('https://app.lifecentre.sg/')}&text=${encodeURIComponent('Grace invited you to the Life Centre app. Join us:')}`],
       ['Email', `mailto:?subject=${encodeURIComponent('Join me on the Life Centre app')}&body=${encodeURIComponent(message)}`],
     ]);
     assert.doesNotMatch(JSON.stringify(sheet), /Lim|Psalm/, 'no profile details');
@@ -4197,9 +4197,9 @@ describe('Profile', () => {
     await context.close();
     // with the phone's own share sheet, and no name set
     const withSheet = await open('#/profile', { setup: (p) => p.evaluateOnNewDocument(() => { window.__shared = []; Object.defineProperty(Navigator.prototype, 'share', { value: async (d) => { window.__shared.push(d); }, configurable: true }); }) });
-    await withSheet.page.click('.pf-share');
+    await withSheet.page.waitForSelector('.pf-share'); await withSheet.page.$eval('.pf-share', (b) => b.click());
     await withSheet.page.waitForFunction(() => window.__shared.length === 1);
-    assert.deepEqual(await withSheet.page.evaluate(() => window.__shared), [{ text: "You're invited to the Life Centre app. Join us: https://icathia.com/lifecentre-app-prototype/app/" }]);
+    assert.deepEqual(await withSheet.page.evaluate(() => window.__shared), [{ text: "You're invited to the Life Centre app. Join us: https://app.lifecentre.sg/" }]);
     assert.equal(await withSheet.page.$('.share-sheet'), null);
     await withSheet.context.close();
     assert.deepEqual(errors, []);
